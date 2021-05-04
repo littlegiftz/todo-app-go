@@ -28,11 +28,11 @@ func Login(c echo.Context) error {
 
 	find := db.Where("email = ?", c.FormValue("email")).First(&user)
 	if find.Error != nil {
-		return c.JSON(http.StatusBadRequest, "Invalid request")
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"message": "Invalid email or password"})
 	}
 
 	if !VerifyPassword(user.Password, c.FormValue("password")) {
-		return c.JSON(http.StatusBadRequest, "Invalid request")
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"message": "Invalid email or password"})
 	}
 
 	// Create jwt token
@@ -48,9 +48,7 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"token": tokenString,
-	})
+	return c.JSON(http.StatusOK, map[string]string{"token": tokenString})
 }
 
 func CreateUser(c echo.Context) error {
@@ -71,7 +69,7 @@ func CreateUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, create.Error)
 	}
 
-	return c.JSON(http.StatusOK, user.ID)
+	return c.JSON(http.StatusOK, map[string]interface{}{"id": user.ID})
 }
 
 func SavePassword(c echo.Context) error {
@@ -84,11 +82,11 @@ func SavePassword(c echo.Context) error {
 
 	find := db.First(&user, uid)
 	if find.Error != nil {
-		return c.JSON(http.StatusBadRequest, find.Error)
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"message": "Invalid request"})
 	}
 
 	if !VerifyPassword(user.Password, c.FormValue("old_password")) {
-		return c.JSON(http.StatusBadRequest, "Invalid request")
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"message": "Current password is incorrect"})
 	}
 
 	newHashedPassword, err := HashPassword(c.FormValue("new_password"))
@@ -103,5 +101,5 @@ func SavePassword(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, save.Error)
 	}
 
-	return c.JSON(http.StatusOK, user.ID)
+	return c.JSON(http.StatusOK, map[string]interface{}{"id": user.ID})
 }
