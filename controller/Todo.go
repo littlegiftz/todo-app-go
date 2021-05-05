@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -59,11 +58,17 @@ func SaveTask(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, find.Error)
 	}
 
+	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(*model.CustomClaims)
+	uid := claims.ID
+
+	if uid != todo.UserID {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"message": "Unauthorized with currrent token"})
+	}
+
 	duedate := c.FormValue("duedate")
 	task := c.FormValue("task")
 	completed := c.FormValue("completed")
-
-	log.Print(completed)
 
 	if duedate != "" {
 		duedate, err := parseDate(duedate)
@@ -98,6 +103,14 @@ func DeleteTask(c echo.Context) error {
 	find := db.First(&todo, id)
 	if find.Error != nil {
 		return c.JSON(http.StatusInternalServerError, find.Error)
+	}
+
+	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(*model.CustomClaims)
+	uid := claims.ID
+
+	if uid != todo.UserID {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"message": "Unauthorized with current token"})
 	}
 
 	delete := db.Delete(&todo)
